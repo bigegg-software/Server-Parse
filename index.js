@@ -1,6 +1,7 @@
 const express = require('express');
 const ParseServer = require('parse-server').ParseServer;
-const GridStoreAdapter = require('parse-server/lib/Adapters/Files/GridStoreAdapter').GridStoreAdapter
+const S3Adapter = require('@parse/s3-files-adapter');
+const AWS = require("aws-sdk");
 
 const path = require('path');
 
@@ -9,6 +10,18 @@ const databaseUri = process.env.PARSE_SERVER_DATABASE_URI;
 if (!databaseUri) {
   console.log('DATABASE_URI not specified, falling back to localhost.');
 }
+
+var s3options = {
+  bucket: process.env.S3_BUCKET, //  'bedev-1258659826'
+  baseUrl: process.env.S3_BASEURL, //  'https://bedev-1258659826.cos.ap-beijing.myqcloud.com'
+  region: process.env.S3_REGION, //  'ap-beijing'
+  directAccess: true,
+  s3overrides: {
+    accessKeyId: process.env.S3_ACCESS_KEY, //  'AKIDGK84oL7jOt98wX841nQqBB1d0CB0p3HL'
+    secretAccessKey: process.env.S3_SECRET_KEY, // 'FIn2HMFl8TijIelhRvCD2e5MRP9h04Wm'
+    endpoint: new AWS.Endpoint(process.env.S3_ENDPOINT) //  'https://cos.ap-beijing.myqcloud.com'
+  }
+};
 
 const api = new ParseServer({
   databaseURI: databaseUri || 'mongodb://localhost:27017/dev',
@@ -19,7 +32,7 @@ const api = new ParseServer({
   maxUploadSize: process.env.PARSE_SERVER_MAX_UPLOAD_SIZE,
   cacheMaxSize: parseInt(process.env.PARSE_SERVER_CACHE_MAX_SIZE),
   publicServerURL: process.env.PARSE_PUBLIC_SERVER_URL || 'http://localhost:1337/api/1',
-  filesAdapter: new GridStoreAdapter(process.env.PARSE_SERVER_DATABASE_URI) // For default setting. GridFS
+  filesAdapter: new S3Adapter(s3options)
 });
 // Client-keys like the javascript key or the .NET key are not necessary with parse-server
 // If you wish you require them, you can set them as options in the initialization above:
